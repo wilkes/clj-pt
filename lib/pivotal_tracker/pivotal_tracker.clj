@@ -1,5 +1,5 @@
 (ns pivotal-tracker
-  (:require [clojure.xml :as xml])
+  (:require (clojure (xml :as xml)))
   (:import (java.io ByteArrayInputStream)
 	   (org.apache.http.client HttpClient)
 	   (org.apache.http.client.methods HttpGet)
@@ -26,23 +26,34 @@
   (EntityUtils/toString (.getEntity response)))
 
 (defn parse-xml-string [s]
-  (xml/parse (ByteArrayInputStream. (.getBytes s))))
+    (xml/parse (ByteArrayInputStream. (.getBytes s))))
 
 (defn fetch-xml [token url]
   (-> (fetch-url token url) response-to-string parse-xml-string))
 
+(defn add-item [result item]
+  (let [k (item :tag) 
+	v (-> item :content first)]
+    (merge result {k v})))
+
+(defn xml-to-struct [x]
+  (reduce add-item {} (-> x :content)))
+
 ;; Get Project
 (defn get-project [token project-id]
-  (fetch-xml token (project-url project-id)))
+  (xml-to-struct (-> (fetch-xml token (project-url project-id)) :content first)))
 
 ;; Getting Stories
 ;;   Single story
 (defn get-story [token project-id story-id]
-  (fetch-xml token (story-url project-id story-id)))
+  (xml-to-struct (-> (fetch-xml token (story-url project-id story-id)) :content first)))
 
 ;;   All stories in a project
-(defn get-all-stories [token project-id]
-  (fetch-xml token (story-url project-id)))
+;; (defn get-all-stories [token project-id]
+;;   (let [x (fetch-xml token (story-url project-id))]
+;;     (reduce (fn [r i] (cons (xml-to-struct i) r))
+;; 	    (-> x :content second :content))))
+
 ;;   Stories by filter
 ;; Adding stories
 ;; Updating Stories
