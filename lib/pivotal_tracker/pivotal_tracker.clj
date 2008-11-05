@@ -42,6 +42,13 @@
 (defn fetch-item [token url]
   (xml-to-struct (-> (fetch-xml token url) :content first)))
 
+(defn xmlify [hmap]
+  (let [f (fn [r [key val]] (cons {:tag key :content [val]} r))]
+    (reduce f [] hmap)))
+
+(defn struct-to-xml [name hmap]
+  (xml/emit {:tag name :content (xmlify hmap)}))
+
 ;; Get Project
 (defn get-project [token project-id]
   (fetch-item token (project-url project-id)))
@@ -58,8 +65,8 @@
     (reduce f [] (-> x :content second :content))))
 
 ;;   Stories by filter
-
 ;; Adding stories
+
 ;; Updating Stories
 ;; Deleting Stories
 ;; Deliver All Finished Stories
