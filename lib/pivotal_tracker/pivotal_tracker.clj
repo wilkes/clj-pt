@@ -39,26 +39,26 @@
 (defn xml-to-struct [x]
   (reduce add-item {} (-> x :content)))
 
+(defn fetch-item [token url]
+  (xml-to-struct (-> (fetch-xml token url) :content first)))
+
 ;; Get Project
 (defn get-project [token project-id]
-  (xml-to-struct (-> (fetch-xml token (project-url project-id)) :content first)))
+  (fetch-item token (project-url project-id)))
 
 ;; Getting Stories
 ;;   Single story
 (defn get-story [token project-id story-id]
-  (xml-to-struct (-> (fetch-xml token (story-url project-id story-id)) :content first)))
+  (fetch-item token (story-url project-id story-id)))
 
 ;;   All stories in a project
 (defn get-all-stories [token project-id]
-  (let [x (fetch-xml token (story-url project-id))]
-    (reduce (fn [r i] 
-	      (prn i) (println "")
-	      (prn (xml-to-struct i)) (println "---")
-	      (cons (xml-to-struct i) r))
-	    []
- 	    (-> x :content second :content))))
+  (let [x (fetch-xml token (story-url project-id))
+	f (fn [r i] (cons (xml-to-struct i) r))]
+    (reduce f [] (-> x :content second :content))))
 
 ;;   Stories by filter
+
 ;; Adding stories
 ;; Updating Stories
 ;; Deleting Stories
