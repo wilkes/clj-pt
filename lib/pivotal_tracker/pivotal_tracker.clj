@@ -6,11 +6,16 @@
 	   (org.apache.http.impl.client DefaultHttpClient)
 	   (org.apache.http.util EntityUtils)))
 
-(defn action-url
+(def *base-url* "http://www.pivotaltracker.com/services/v1/projects/")
+
+(defn- project-url [project-id]
+  (str *base-url* project-id))
+
+(defn- story-url 
   ([project-id]
-     (str "http://www.pivotaltracker.com/services/v1/projects/" project-id))
-  ([project-id action]
-     (str (action-url project-id) "/" action)))
+     (str (project-url project-id) "/stories"))
+  ([project-id story-id]
+     (str (story-url project-id) "/" story-id)))
 
 (defn fetch-url [token url]
   (let [get (doto (HttpGet. url)
@@ -23,15 +28,21 @@
 (defn parse-xml-string [s]
   (xml/parse (ByteArrayInputStream. (.getBytes s))))
 
+(defn fetch-xml [token url]
+  (-> (fetch-url token url) response-to-string parse-xml-string))
+
 ;; Get Project
 (defn get-project [token project-id]
-  (-> (fetch-url token (action-url project-id))
-      response-to-string
-      parse-xml-string))
+  (fetch-xml token (project-url project-id)))
 
 ;; Getting Stories
 ;;   Single story
+(defn get-story [token project-id story-id]
+  (fetch-xml token (story-url project-id story-id)))
+
 ;;   All stories in a project
+(defn get-all-stories [token project-id]
+  (fetch-xml token (story-url project-id)))
 ;;   Stories by filter
 ;; Adding stories
 ;; Updating Stories
