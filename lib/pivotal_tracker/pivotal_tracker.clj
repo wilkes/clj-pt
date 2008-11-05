@@ -49,10 +49,14 @@
   (xml-to-struct (-> (fetch-xml token (story-url project-id story-id)) :content first)))
 
 ;;   All stories in a project
-;; (defn get-all-stories [token project-id]
-;;   (let [x (fetch-xml token (story-url project-id))]
-;;     (reduce (fn [r i] (cons (xml-to-struct i) r))
-;; 	    (-> x :content second :content))))
+(defn get-all-stories [token project-id]
+  (let [x (fetch-xml token (story-url project-id))]
+    (reduce (fn [r i] 
+	      (prn i) (println "")
+	      (prn (xml-to-struct i)) (println "---")
+	      (cons (xml-to-struct i) r))
+	    []
+ 	    (-> x :content second :content))))
 
 ;;   Stories by filter
 ;; Adding stories
