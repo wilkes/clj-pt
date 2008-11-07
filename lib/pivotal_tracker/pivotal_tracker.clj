@@ -22,11 +22,11 @@
      (str (story-url project-id) "/" story-id)))
 
 (defn fetch-item [token url]
-  (xml/to-struct (-> (client/get-as-xml token url) :content first)))
+  (xml/to-struct (-> (client/get-xml token url) :content first)))
 
 (defn fetch-collection [token url]
   (reduce #(cons (xml/to-struct %2) %1) 
-	  [] (-> (client/get-as-xml token url) :content second :content)))
+	  [] (-> (client/get-xml token url) :content second :content)))
 
 (defn valid-story? [s]
   (let [required #{:name :requested_by}

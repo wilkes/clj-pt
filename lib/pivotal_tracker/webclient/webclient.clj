@@ -23,11 +23,17 @@
   ([token request data]
       (.execute (DefaultHttpClient.) (build-request token request data))))
 
-(defn response-to-string [response]
+(defn to-string [response]
   (EntityUtils/toString (.getEntity response)))
+
+(defn to-xml [response]
+  (-> response to-string xml/parse))
 
 (defn get [token url]
   (do-request token (HttpGet. url)))
+
+(defn get-xml [token url]
+  (to-xml (get token url)))
 
 (defn post [token url data]
   (do-request token (HttpPost. url) data))
@@ -38,5 +44,3 @@
 (defn put [token url]
   (do-request token (HttpPut. url)))
 
-(defn get-as-xml [token url]
-  (-> (get token url) response-to-string xml/parse))
