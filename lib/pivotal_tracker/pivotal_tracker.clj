@@ -1,7 +1,8 @@
 (ns pivotal-tracker
   (:require (clojure.contrib (except :as except))
 	    (pivotal-tracker (xml :as xml)
-			     (webclient :as client))))
+			     (webclient :as client)
+			     (query :as query))))
 
 
 ;; ssl off be default
@@ -46,11 +47,23 @@
 (defn get-all-stories [token project-id]
   (fetch-collection token (story-url project-id)))
 
-;; Currently the client is responsbile for encoding 
-(defn search-stories [token project-id criteria]
-  (fetch-collection token (str (story-url project-id) "?filter=" criteria)))
+(query/criteria label requester owner mywork id)
 
-;; These are all returning HttpRespons objects for now
+(query/enums type
+	     feature, bug, chore release)
+
+(query/enums state
+	     unstarted started finished 
+	     delivered accepted rejected)
+
+(defn search-stories [token project-id filter]
+  (fetch-collection token (str (story-url project-id) "?filter=" filter)))
+
+(comment 
+  "an exmple search"
+  (search-stories user/t user/p (query/join feature (label "test"))))
+
+;; These are all returning HttpResponse objects for now
 (defn add-story [token project-id story]
   (except/throw-if (not (valid-story? story)) "Invalid story")
   (client/post token

@@ -30,6 +30,7 @@
   (-> response to-string xml/parse))
 
 (defn get [token url]
+  (println url)
   (do-request token (HttpGet. url)))
 
 (defn get-xml [token url]
