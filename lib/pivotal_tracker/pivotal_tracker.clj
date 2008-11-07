@@ -3,8 +3,14 @@
 	    (pivotal-tracker (xml :as xml)
 			     (webclient :as client))))
 
-; URL creation
-(def *base-url* "http://www.pivotaltracker.com/services/v1/projects/")
+
+;; ssl off be default
+(def *base-url*)
+(defn use-ssl []
+  (def *base-url* "https://www.pivotaltracker.com/services/v1/projects/"))
+(defn no-ssl []
+  (def *base-url* "http://www.pivotaltracker.com/services/v1/projects/"))
+(no-ssl)
 
 (defn project-url [project-id]
   (str *base-url* project-id))
@@ -15,10 +21,10 @@
   ([project-id story-id]
      (str (story-url project-id) "/" story-id)))
 
-(defn- fetch-item [token url]
+(defn fetch-item [token url]
   (xml/to-struct (-> (client/fetch-as-xml token url) :content first)))
 
-(defn- fetch-collection [token url]
+(defn fetch-collection [token url]
   (reduce #(cons (xml/to-struct %2) %1) 
 	  [] (-> (client/fetch-as-xml token url) :content second :content)))
 
