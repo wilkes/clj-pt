@@ -58,7 +58,6 @@
   (EntityUtils/toString (.getEntity response)))
 
 (defn parse-xml-string [s]
-  (println s)
   (xml/parse (ByteArrayInputStream. (.getBytes s))))
 
 (defn fetch-xml [token url]
@@ -74,6 +73,11 @@
 
 (defn fetch-item [token url]
   (xml-to-struct (-> (fetch-xml token url) :content first)))
+
+(defn fetch-collection [token url]
+  (let [response-xml (fetch-xml token url)
+	f (fn [r i] (cons (xml-to-struct i) r))]
+    (reduce #(cons (xml-to-struct %2) %1) [] (-> response-xml :content second :content))))
 
 (defn xmlify [hmap]
   (let [f (fn [r [key val]] (cons {:tag key :content [val]} r))]
@@ -93,20 +97,13 @@
 
 ;;   All stories in a project
 (defn get-all-stories [token project-id]
-  (let [x (fetch-xml token (story-url project-id))
-	f (fn [r i] (cons (xml-to-struct i) r))]
-    (reduce f [] (-> x :content second :content))))
+  (fetch-collection token (story-url project-id)))
 
 ;;   Stories by filter
 ;; Currently the client is responsbile for encoding 
 (defn search-stories [token project-id criteria]
-  (let [url (str (story-url project-id) 
-		 "?filter=" criteria)
-	x (fetch-xml token url)
-	f (fn [r i] (cons (xml-to-struct i) r))]
-    (prn url)
-    (if (-> x :content second :content) 
-      (reduce f [] (-> x :content second :content)))))
+  (fetch-collection token (str (story-url project-id) "?filter=" criteria)))
+
 ;; Adding stories
 
 (defn valid-story? [s]
