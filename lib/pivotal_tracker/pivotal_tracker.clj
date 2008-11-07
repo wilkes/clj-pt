@@ -1,9 +1,11 @@
 (ns pivotal-tracker
-  (:require (clojure (xml :as xml)))
+  (:require (clojure (xml :as xml))
+	    (clojure.contrib (except :as except)))
   (:import (java.io ByteArrayInputStream)
 	   (org.apache.http.client HttpClient)
-	   (org.apache.http.client.methods HttpGet)
+	   (org.apache.http.client.methods HttpGet HttpPost)
 	   (org.apache.http.impl.client DefaultHttpClient)
+	   (org.apache.http.entity StringEntity)
 	   (org.apache.http.util EntityUtils)))
 
 ;; stolen from clojure.xml but replace any println's with print's
@@ -27,7 +29,6 @@
   (println "<?xml version='1.0' encoding='UTF-8'?>")
   (emit-element x))
 
-
 (def *base-url* "http://www.pivotaltracker.com/services/v1/projects/")
 
 (defn- project-url [project-id]
@@ -39,16 +40,26 @@
   ([project-id story-id]
      (str (story-url project-id) "/" story-id)))
 
+(defn add-headers [token url]
+  (doto url
+    (addHeader "Token" token)
+    (addHeader "Content-type" "application/xml")))
+
 (defn fetch-url [token url]
-  (let [get (doto (HttpGet. url)
-	     (addHeader "Token" token))]
-    (.execute (DefaultHttpClient.) get)))
+  (let [req (add-headers token (HttpGet. url))]
+    (.execute (DefaultHttpClient.) req)))
+
+(defn post-url [token url data]
+  (let [req (doto (add-headers token (HttpPost. url))
+	      (setEntity (StringEntity. data)))]
+    (.execute (DefaultHttpClient.) req)))
 
 (defn response-to-string [response]
   (EntityUtils/toString (.getEntity response)))
 
 (defn parse-xml-string [s]
-    (xml/parse (ByteArrayInputStream. (.getBytes s))))
+  (println s)
+  (xml/parse (ByteArrayInputStream. (.getBytes s))))
 
 (defn fetch-xml [token url]
   (-> (fetch-url token url) response-to-string parse-xml-string))
@@ -69,7 +80,7 @@
     (reduce f [] hmap)))
 
 (defn struct-to-xml [name hmap]
-  (emit {:tag name :content (xmlify hmap)}))
+  (with-out-str (emit {:tag name :content (xmlify hmap)})))
 
 ;; Get Project
 (defn get-project [token project-id]
@@ -88,6 +99,20 @@
 
 ;;   Stories by filter
 ;; Adding stories
+
+(defn valid-story? [s]
+  (let [required #{:name :requested_by}
+	optional #{:id :story_type :url :estimate :current_state :description :created_at}
+	all-fields (concat required optional)]
+    (and
+     (every? #(contains? s %) required)
+     (every? #(.contains all-fields %) (keys s)))))
+
+(defn add-story [token project-id story]
+  (except/throw-if (not (valid-story? story)) "Invalid story")
+  (post-url token
+	    (story-url project-id)
+	    (struct-to-xml :story story)))
 
 ;; Updating Stories
 ;; Deleting Stories
