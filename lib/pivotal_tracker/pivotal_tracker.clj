@@ -3,7 +3,7 @@
 	    (clojure.contrib (except :as except)))
   (:import (java.io ByteArrayInputStream)
 	   (org.apache.http.client HttpClient)
-	   (org.apache.http.client.methods HttpGet HttpPost)
+	   (org.apache.http.client.methods HttpGet HttpPost HttpDelete HttpPut)
 	   (org.apache.http.impl.client DefaultHttpClient)
 	   (org.apache.http.entity StringEntity)
 	   (org.apache.http.util EntityUtils)))
@@ -124,6 +124,19 @@
 	    (struct-to-xml :story story)))
 
 ;; Updating Stories
+;; Always getting a 500?!?!
+(defn update-story [token project-id story-id update]
+  (post-url token
+	    (story-url project-id story-id)
+	    (struct-to-xml :story update)))
+
 ;; Deleting Stories
+(defn delete-story [token project-id story-id]
+  (do-request (build-request token (HttpDelete. (story-url project-id story-id)))))
+
 ;; Deliver All Finished Stories
+(defn deliver-finished-stories [token project-id]
+  (do-request
+   (build-request token (HttpPut. (str (project-url project-id) 
+				       "/stories_deliver_all_finished")))))
 
