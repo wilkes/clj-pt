@@ -17,8 +17,14 @@
      (doto (build-request token request)
        (setEntity (StringEntity. data)))))
 
-(defn do-request [token request]
-  (.execute (DefaultHttpClient.) (build-request token request)))
+(defn do-request 
+  ([token request]
+      (.execute (DefaultHttpClient.) (build-request token request)))
+  ([token request data]
+      (.execute (DefaultHttpClient.) (build-request token request data))))
+
+(defn response-to-string [response]
+  (EntityUtils/toString (.getEntity response)))
 
 (defn get [token url]
   (do-request token (HttpGet. url)))
@@ -32,8 +38,5 @@
 (defn put [token url]
   (do-request token (HttpPut. url)))
 
-(defn response-to-string [response]
-  (EntityUtils/toString (.getEntity response)))
-
-(defn fetch-as-xml [token url]
+(defn get-as-xml [token url]
   (-> (get token url) response-to-string xml/parse))
