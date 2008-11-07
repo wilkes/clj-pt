@@ -1,40 +1,11 @@
 (ns pivotal-tracker
-  (:require (clojure (xml :as xml))
-	    (clojure.contrib (except :as except)))
-  (:import (java.io ByteArrayInputStream)
-	   (org.apache.http.client HttpClient)
+  (:require (clojure.contrib (except :as except))
+	    (pivotal-tracker (xml :as xml)))
+  (:import (org.apache.http.client HttpClient)
 	   (org.apache.http.client.methods HttpGet HttpPost HttpDelete HttpPut)
 	   (org.apache.http.impl.client DefaultHttpClient)
 	   (org.apache.http.entity StringEntity)
 	   (org.apache.http.util EntityUtils)))
-
-;; stolen from clojure.xml but replace any println's with print's
-(defn emit-element [e]
-  (if (instance? String e)
-    (print e)
-    (do
-      (print (str "<" (name (:tag e))))
-      (when (:attrs e)
-	(doseq attr (:attrs e)
-	  (print (str " " (name (key attr)) "='" (val attr)"'"))))
-      (if (:content e)
-	(do
-	  (print ">")
-	  (doseq c (:content e)
-	    (emit-element c))
-	  (print (str "</" (name (:tag e)) ">")))
-	(print "/>")))))
-
-(defn emit [x]
-  (println "<?xml version='1.0' encoding='UTF-8'?>")
-  (emit-element x))
-
-(defn xml-to-struct [x]
-  (reduce (fn [result item]
-	    (merge result 
-		   {(item :tag) (-> item :content first)}))
-	  {}
-	  (-> x :content)))
 
 ; URL creation
 (def *base-url* "http://www.pivotaltracker.com/services/v1/projects/")
@@ -69,26 +40,15 @@
 (defn response-to-string [response]
   (EntityUtils/toString (.getEntity response)))
 
-(defn parse-xml-string [s]
-  (xml/parse (ByteArrayInputStream. (.getBytes s))))
-
 (defn fetch-as-xml [token url]
-  (-> (fetch-url token url) response-to-string parse-xml-string))
+  (-> (fetch-url token url) response-to-string xml/parse))
 
 (defn fetch-item [token url]
-  (xml-to-struct (-> (fetch-as-xml token url) :content first)))
+  (xml/to-struct (-> (fetch-as-xml token url) :content first)))
 
 (defn fetch-collection [token url]
-  (let [response-xml (fetch-as-xml token url)
-	f (fn [r i] (cons (xml-to-struct i) r))]
-    (reduce #(cons (xml-to-struct %2) %1) [] (-> response-xml :content second :content))))
-
-(defn xmlify [hmap]
-  (let [f (fn [r [key val]] (cons {:tag key :content [val]} r))]
-    (reduce f [] hmap)))
-
-(defn struct-to-xml [name hmap]
-  (with-out-str (emit {:tag name :content (xmlify hmap)})))
+  (reduce #(cons (xml/to-struct %2) %1) 
+	  [] (-> (fetch-as-xml token url) :content second :content)))
 
 ;; Get Project
 (defn get-project [token project-id]
@@ -121,14 +81,14 @@
   (except/throw-if (not (valid-story? story)) "Invalid story")
   (post-url token
 	    (story-url project-id)
-	    (struct-to-xml :story story)))
+	    (xml/to-xml :story story)))
 
 ;; Updating Stories
 ;; Always getting a 500?!?!
 (defn update-story [token project-id story-id update]
   (post-url token
 	    (story-url project-id story-id)
-	    (struct-to-xml :story update)))
+	    :story update))
 
 ;; Deleting Stories
 (defn delete-story [token project-id story-id]
