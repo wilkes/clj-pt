@@ -31,10 +31,10 @@
 
 (def *base-url* "http://www.pivotaltracker.com/services/v1/projects/")
 
-(defn- project-url [project-id]
+(defn project-url [project-id]
   (str *base-url* project-id))
 
-(defn- story-url 
+(defn story-url 
   ([project-id]
      (str (project-url project-id) "/stories"))
   ([project-id story-id]
@@ -98,6 +98,15 @@
     (reduce f [] (-> x :content second :content))))
 
 ;;   Stories by filter
+;; Currently the client is responsbile for encoding 
+(defn search-stories [token project-id criteria]
+  (let [url (str (story-url project-id) 
+		 "?filter=" criteria)
+	x (fetch-xml token url)
+	f (fn [r i] (cons (xml-to-struct i) r))]
+    (prn url)
+    (if (-> x :content second :content) 
+      (reduce f [] (-> x :content second :content)))))
 ;; Adding stories
 
 (defn valid-story? [s]
