@@ -40,7 +40,7 @@
 
 (defn context [token project-id]
   (fn [target & args]
-    (apply target (list* token project-id args))))
+    (apply target token project-id args)))
 
 (defn get-project [token project-id]
   (fetch-item token (project-url project-id)))
@@ -48,10 +48,8 @@
 (defn get-story [token project-id story-id]
   (fetch-item token (story-url project-id story-id)))
 
-(defn get-all-stories [token project-id]
-  (fetch-collection token (story-url project-id)))
-
-(query/criteria label requester owner mywork id)
+(query/criteria 
+ label requester owner mywork id)
 
 (query/enums type
 	     feature bug chore release)
@@ -60,12 +58,14 @@
 	     unstarted started finished 
 	     delivered accepted rejected)
 
-(defn search-stories [token project-id filter]
-  (fetch-collection token (str (story-url project-id) "?filter=" filter)))
+(defn all 
+  ([token project-id & filter]
+     (let [filter-str (if filter (str "?filter=" (apply query/join filter)) "")]
+       (fetch-collection token (str (story-url project-id) filter-str)))))
 
 (defmacro defsearch [func-name args & body]
   `(defn ~func-name [token# project-id# ~@args]
-     (search-stories token# project-id# (query/join ~@body))))
+     (all token# project-id# ~@body)))
 
 (defsearch in-progress [user-name] 
   (mywork user-name))
@@ -74,22 +74,37 @@
   (requester user-name) in-state)
 
 ;; These are all returning HttpResponse objects for now
-(defn add-story [token project-id story]
+(defn add [token project-id story]
   (except/throw-if (not (valid-story? story)) "Invalid story")
   (client/post token
 	    (story-url project-id)
 	    (xml/to-xml :story story)))
 
 ;; Always getting a 500?!?!
-(defn update-story [token project-id story-id update]
+(defn update [token project-id story-id update]
   (client/post token
 	       (story-url project-id story-id)
 	       :story update))
 
-(defn delete-story [token project-id story-id]
+(defn delete [token project-id story-id]
   (client/delete token (story-url project-id story-id)))
 
 (defn deliver-finished-stories [token project-id]
   (client/put token 
 	      (str (project-url project-id) "/stories_deliver_all_finished")))
 
+(defn as-int [s prop]
+  (Integer/decode (s prop)))
+
+(defn points [stories]
+  (let [f (fn [result story]
+	    (if (> (as-int story :estimate) 0)
+	      (+ result (as-int story :estimate))
+	      result))]
+    (reduce f 0 stories)))
+
+(defn collect [token project-id keyword & criteria]
+  (let [stories (apply all token project-id criteria)]
+    (if (keyword? keyword)
+      (map keyword stories)
+      (map #(map % (seq keyword)) stories))))
