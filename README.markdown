@@ -3,6 +3,7 @@ Clojure library for pivotal tracker
 http://www.pivotaltracker.com/help/api
 
 Sample Usage:
+
        ; (use-ssl) or (no-ssl)
        ; (use-ssl) is default behavior
        (def token "--token--")
