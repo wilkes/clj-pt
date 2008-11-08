@@ -5,13 +5,13 @@
 			     (query :as query))))
 
 
-;; ssl off be default
+;; ssl on be default
 (def *base-url*)
 (defn use-ssl []
   (def *base-url* "https://www.pivotaltracker.com/services/v1/projects/"))
 (defn no-ssl []
   (def *base-url* "http://www.pivotaltracker.com/services/v1/projects/"))
-(no-ssl)
+(use-ssl)
 
 (defn project-url [project-id]
   (str *base-url* project-id))
@@ -38,6 +38,10 @@
      (every? #(.contains all-fields %) (keys s)))))
 
 
+(defn context [token project-id]
+  (fn [target & args]
+    (apply target (list* token project-id args))))
+
 (defn get-project [token project-id]
   (fetch-item token (project-url project-id)))
 
@@ -50,7 +54,7 @@
 (query/criteria label requester owner mywork id)
 
 (query/enums type
-	     feature, bug, chore release)
+	     feature bug chore release)
 
 (query/enums state
 	     unstarted started finished 
@@ -59,9 +63,15 @@
 (defn search-stories [token project-id filter]
   (fetch-collection token (str (story-url project-id) "?filter=" filter)))
 
-(comment 
-  "an exmple search"
-  (search-stories user/t user/p (query/join feature (label "test"))))
+(defmacro defsearch [func-name args & body]
+  `(defn ~func-name [token# project-id# ~@args]
+     (search-stories token# project-id# (query/join ~@body))))
+
+(defsearch in-progress [user-name] 
+  (mywork user-name))
+
+(defsearch from-user-in-state [user-name in-state]
+  (requester user-name) in-state)
 
 ;; These are all returning HttpResponse objects for now
 (defn add-story [token project-id story]
