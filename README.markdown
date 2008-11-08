@@ -5,7 +5,8 @@ http://www.pivotaltracker.com/help/api
 Sample Usage:
 
        ; (use-ssl) or (no-ssl)
-       ; (use-ssl) is default behavior
+       ; (use-ssl) is on by default
+       (use 'pivotal-tracker)
        (def token "--token--")
        (def project-id 1234)
        (def my-project (context token project-id))
