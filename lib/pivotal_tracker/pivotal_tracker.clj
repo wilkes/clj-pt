@@ -60,18 +60,8 @@
 
 (defn all 
   ([token project-id & filter]
-     (let [filter-str (if filter (str "?filter=" (apply query/join filter)) "")]
+     (let [filter-str (if filter (str "?filter=" (apply query/comb filter)) "")]
        (fetch-collection token (str (story-url project-id) filter-str)))))
-
-(defmacro defsearch [func-name args & body]
-  `(defn ~func-name [token# project-id# ~@args]
-     (all token# project-id# ~@body)))
-
-(defsearch in-progress [user-name] 
-  (mywork user-name))
-
-(defsearch from-user-in-state [user-name in-state]
-  (requester user-name) in-state)
 
 ;; These are all returning HttpResponse objects for now
 (defn add [token project-id story]

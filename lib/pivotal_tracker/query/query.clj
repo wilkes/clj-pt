@@ -1,6 +1,8 @@
 (ns pivotal-tracker.query)
 
 (comment "
+from http://www.pivotaltracker.com/help#howcanasearchberefined
+
 Searches can be refined with the following modifications:
 
 \"String in Quotes\"
@@ -41,20 +43,28 @@ state:started requester:DD label:\"my stuff\" keyword
 
 
 (defmacro criteria [& names]
+  "For each name passed it a 1 arg function is created that returns the URL 
+  encoded query string for filtering"
   `(do 
      ~@(for [n names]
 	 `(defn ~n [s#]
 	    (let [s# (if (some #(Character/isWhitespace %) s#)
 		       (str \" s# \") 
+
 		       s#)]
 	      (str ~(str n) ":" (java.net.URLEncoder/encode s#)))))))
 
-(defmacro enums [setname & names]
+(defmacro enums 
+  "Defines a set enumerated filters where all the values are storied as a set 
+   in the first arg."
+  [setname & names]
   `(do
      ~@(for [n names]
 	 `(def ~n ~(str setname ":" n)))
      (def ~setname #{~@names})))
 
-(defn join [& criteria]
-  (apply str (interpose "+" criteria)))
+(defn combine
+  "Combine multiple filters to use in the search"
+  [& filters]
+  (apply str (interpose "+" filters)))
 
