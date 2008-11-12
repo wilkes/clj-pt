@@ -31,12 +31,12 @@
 
 (defn valid-story? [s]
   (let [required #{:name :requested_by}
-	optional #{:id :story_type :url :estimate :current_state :description :created_at}
+	optional #{:id :story_type :url :estimate :current_state 
+		   :description :created_at}
 	all-fields (concat required optional)]
     (and
      (every? #(contains? s %) required)
      (every? #(.contains all-fields %) (keys s)))))
-
 
 (defn context [token project-id]
   (fn [target & args]
@@ -48,8 +48,7 @@
 (defn get-story [token project-id story-id]
   (fetch-item token (story-url project-id story-id)))
 
-(query/criteria 
- label requester owner mywork id)
+(query/criteria label requester owner mywork id)
 
 (query/enums type
 	     feature bug chore release)
@@ -60,7 +59,7 @@
 
 (defn all 
   ([token project-id & filter]
-     (let [filter-str (if filter (str "?filter=" (apply query/comb filter)) "")]
+     (let [filter-str (if filter (str "?filter=" (apply query/combine filter)) "")]
        (fetch-collection token (str (story-url project-id) filter-str)))))
 
 ;; These are all returning HttpResponse objects for now

@@ -42,17 +42,16 @@ state:started requester:DD label:\"my stuff\" keyword
 ")
 
 
+(defn- encode [s]
+  (java.net.URLEncode (if (some #(Character/isWhitespace %) s)
+			(str \" s \")
+			s)))
+
 (defmacro criteria [& names]
-  "For each name passed it a 1 arg function is created that returns the URL 
-  encoded query string for filtering"
   `(do 
      ~@(for [n names]
 	 `(defn ~n [s#]
-	    (let [s# (if (some #(Character/isWhitespace %) s#)
-		       (str \" s# \") 
-
-		       s#)]
-	      (str ~(str n) ":" (java.net.URLEncoder/encode s#)))))))
+	    (str ~(str n) ":" (encode s#))))))
 
 (defmacro enums 
   "Defines a set enumerated filters where all the values are storied as a set 
