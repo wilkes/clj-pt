@@ -93,14 +93,12 @@
   (client/put token 
 	      (str (project-url project-id) "/stories_deliver_all_finished")))
 
-(defn as-int [s prop]
-  (Integer/decode (s prop)))
-
 (defn points [stories]
   (let [f (fn [result story]
-	    (if (> (as-int story :estimate) 0)
-	      (+ result (as-int story :estimate))
-	      result))]
+	    (let [estimate (Integer/decode (story :estimate))]
+	      (if (> estimate 0)
+		(+ result estimate)
+		result)))]
     (reduce f 0 stories)))
 
 (defn collect [token project-id keyword & criteria]

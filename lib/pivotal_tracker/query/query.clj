@@ -40,14 +40,13 @@ state:started requester:DD label:\"my stuff\" keyword
 ")
 
 
-(defn spaces? [s]
-  (.find (.matcher #"\s" s)))
-
 (defmacro criteria [& names]
   `(do 
      ~@(for [n names]
 	 `(defn ~n [s#]
-	    (let [s# (if (spaces? s#) (str \" s# \") s#)]
+	    (let [s# (if (some #(Character/isWhitespace %) s#)
+		       (str \" s# \") 
+		       s#)]
 	      (str ~(str n) ":" (java.net.URLEncoder/encode s#)))))))
 
 (defmacro enums [setname & names]
