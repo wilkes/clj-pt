@@ -31,26 +31,18 @@
     (-> x :content)))
 
 (defn- is-value? [item]
-  (and (item :content)
-       (string? (-> item :content first))))
+  (and (item :content) (string? (-> item :content first))))
 
 (defn- is-list? [item]
-  (and (-> item :attrs)
-       (-> item :attrs :count)))
-
-(defn- string-content [item]
-  (-> item :content first))
-
-(declare simplify)
-(defn- simplify-children [item]
-  (map simplify (item :content)))
+  (and (-> item :attrs) (-> item :attrs :count)))
 
 (defn simplify [item]
-  {(item :tag)
-   (cond
-    (is-value? item) (string-content item)
-    (is-list? item) (simplify-children item)
-    :else (reduce merge {} (simplify-children item)))})
+  (let [simplify-list #(map simplify (% :content))]
+    {(item :tag)
+     (cond
+      (is-value? item) (-> item :content first)
+      (is-list? item) (simplify-list item)
+      :else (reduce merge {} (simplify-list item)))}))
 
 (defn to-xml [name hmap]
   (let [content (reduce (fn [result [key val]]
@@ -64,3 +56,4 @@
 
 (defn simple-parse [s]
   (-> s parse simplify))
+
