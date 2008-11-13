@@ -25,10 +25,31 @@
 
 (defn to-struct [x]
   (reduce (fn [result item]
-	    (merge result 
-		   {(item :tag) (-> item :content first)}))
-	  {}
-	  (-> x :content)))
+      (merge result 
+       {(item :tag) (-> item :content first)}))
+    {}
+    (-> x :content)))
+
+(defn- is-value? [item]
+  (and (item :content)
+       (string? (-> item :content first))))
+
+(defn- is-list? [item]
+  (and (-> item :attrs)
+       (-> item :attrs :count)))
+
+(defn- string-content [item]
+  (-> item :content first))
+
+(defn- simplify-children [item]
+  (map simplify (item :content)))
+
+(defn simplify [item]
+  {(item :tag)
+   (cond
+    (is-value? item) (string-content item)
+    (is-list? item) (simplify-children item)
+    :else (reduce merge {} (simplify-children item)))})
 
 (defn to-xml [name hmap]
   (let [content (reduce (fn [result [key val]]
