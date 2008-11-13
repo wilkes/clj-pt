@@ -41,6 +41,7 @@
 (defn- string-content [item]
   (-> item :content first))
 
+(declare simplify)
 (defn- simplify-children [item]
   (map simplify (item :content)))
 
@@ -60,3 +61,6 @@
 
 (defn parse [s]
   (clojure.xml/parse (ByteArrayInputStream. (.getBytes s))))
+
+(defn simple-parse [s]
+  (-> s parse simplify))

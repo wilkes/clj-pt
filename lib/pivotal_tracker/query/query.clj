@@ -42,8 +42,8 @@ state:started requester:DD label:\"my stuff\" keyword
 ")
 
 
-(defn- encode [s]
-  (java.net.URLEncode (if (some #(Character/isWhitespace %) s)
+(defn encode [s]
+  (java.net.URLEncoder (if (some #(Character/isWhitespace %) s)
 			(str \" s \")
 			s)))
 
