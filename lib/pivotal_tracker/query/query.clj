@@ -1,4 +1,5 @@
-(ns pivotal-tracker.query)
+(ns pivotal-tracker.query
+  (:import (java.net URLEncoder)))
 
 (comment "
 from http://www.pivotaltracker.com/help#howcanasearchberefined
@@ -43,9 +44,9 @@ state:started requester:DD label:\"my stuff\" keyword
 
 
 (defn encode [s]
-  (java.net.URLEncoder (if (some #(Character/isWhitespace %) s)
-			(str \" s \")
-			s)))
+  (URLEncoder/encode (if (some #(Character/isWhitespace %) s)
+				(str \" s \")
+				s)))
 
 (defmacro criteria [& names]
   `(do 
@@ -57,10 +58,7 @@ state:started requester:DD label:\"my stuff\" keyword
   "Defines a set enumerated filters where all the values are storied as a set 
    in the first arg."
   [setname & names]
-  `(do
-     ~@(for [n names]
-	 `(def ~n ~(str setname ":" n)))
-     (def ~setname #{~@names})))
+  `(def ~setname #{~@names}))
 
 (defn combine
   "Combine multiple filters to use in the search"
