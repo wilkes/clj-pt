@@ -58,7 +58,10 @@ state:started requester:DD label:\"my stuff\" keyword
   "Defines a set enumerated filters where all the values are storied as a set 
    in the first arg."
   [setname & names]
-  `(def ~setname #{~@names}))
+  `(do
+     ~@(for [n names]
+	 `(def ~n ~(str setname ":" n)))
+     (def ~setname #{~@names})))
 
 (defn combine
   "Combine multiple filters to use in the search"
