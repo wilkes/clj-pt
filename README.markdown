@@ -9,37 +9,37 @@ Sample Usage:
        (use 'pivotal-tracker)
        (def token "--token--")
        (def project-id 1234)
-       (def my-project (context token project-id))
+       (def my-project (project token project-id))
        
-       ;; list all the stories in my-project
+       ;; fetch a list of all the stories as maps
        (my-project all)
        
-       ;; what has my boss requested that hasn't been started
+       ;; what has my boss requested that hasn't been started?
        (my-project all (requester "Pointed Haired Boss") unstarted)
 
+       ;; all unstarted bugs
        (my-project all unstarted bug)
        
        ;; what's ready for QA?
        (my-project all delivered)
 
-       ;;how big is that
+       ;; how big is that?
        (points (my-project all delivered))
-       
-       ;; give me all the story for the chores that people
-       (map :id (my-project all))
-       ;;
-       (my-project collect :id)
 
+       ;; what are the names of those stories
+       (reduce-stories (my-project all delivered) :name)
+       ;; returns (("name1") ("name2")...) 
+       
        ;; create a story
        (my-project add {:name "My Story" :requested_by "Wilkes Joiner"
                         :description "This is a story of a man named Jed"})
 
 	
-       ;; lookup my story and update, then throw it away
+       ;; lookup my story, then throw it away
        (let [id (:id (first (my-project all (:requester "Wilkes Joiner") 
        		    		    (exact "a man named Jed"))))]
-         (my-project update id {:description "Black gold that is, Texas Tea."})
          (my-project delete id))
 	
        ;; get all the ids, names and descriptions for the unstarted bugs
-       (my-project collect (:id :name :description) unstarted bug)
+       (reduce-stories (my-project all unstarted bug) (:id :name :description))
+       ;; returns (("123" "name1", "description1") ...)
