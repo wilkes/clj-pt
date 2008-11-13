@@ -22,12 +22,11 @@
   ([project-id story-id]
      (str (story-url project-id) "/" story-id)))
 
-(defn fetch-item [token url]
-  (xml/to-struct (-> (client/get-xml token url) :content first)))
+(defn simple-xml [response]
+  (-> response client/to-xml xml/simplify))
 
-(defn fetch-collection [token url]
-  (reduce #(cons (xml/to-struct %2) %1) 
-	  [] (-> (client/get-xml token url) :content second :content)))
+(defn fetch [token url]
+  (xml/simplify (client/get-xml token url)))
 
 (defn valid-story? [s]
   (let [required #{:name :requested_by}
@@ -38,15 +37,13 @@
      (every? #(contains? s %) required)
      (every? #(.contains all-fields %) (keys s)))))
 
+
+
 (defn context [token project-id]
   (fn [target & args]
     (apply target token project-id args)))
 
-(defn get-project [token project-id]
-  (fetch-item token (project-url project-id)))
 
-(defn get-story [token project-id story-id]
-  (fetch-item token (story-url project-id story-id)))
 
 (query/criteria label requester owner mywork id)
 
@@ -57,30 +54,43 @@
 	     unstarted started finished 
 	     delivered accepted rejected)
 
+(defn info [token project-id]
+  (-> (fetch token (project-url project-id))
+      :response :project))
+
 (defn all 
   ([token project-id & filter]
-     (let [filter-str (if filter (str "?filter=" (apply query/combine filter)) "")]
-       (fetch-collection token (str (story-url project-id) filter-str)))))
+     (let [filter-str (if filter (str "?filter=" (apply query/combine filter)) "")
+	   stories (fetch token (str (story-url project-id) filter-str))]
+       (map :story (-> stories :response :stories)))))
 
-;; These are all returning HttpResponse objects for now
+
 (defn add [token project-id story]
   (except/throw-if (not (valid-story? story)) "Invalid story")
-  (client/post token
-	    (story-url project-id)
-	    (xml/to-xml :story story)))
+  (-> (simple-xml 
+       (client/post token
+		    (story-url project-id)
+		    (xml/to-xml :story story)))
+      :response :story))
 
-;; Always getting a 500?!?!
-(defn update [token project-id story-id update]
-  (client/post token
-	       (story-url project-id story-id)
-	       :story update))
+(comment 
+  "Always getting a 500?!?!"
+  (defn update [token project-id story-id update]
+    (simple-xml
+     (client/post token
+		  (story-url project-id story-id)
+		  (xml/to-xml :story update)))))
 
 (defn delete [token project-id story-id]
-  (client/delete token (story-url project-id story-id)))
+  (-> (simple-xml 
+       (client/delete token (story-url project-id story-id)))
+      :response :message))
 
 (defn deliver-finished-stories [token project-id]
-  (client/put token 
-	      (str (project-url project-id) "/stories_deliver_all_finished")))
+  (simple-xml 
+   (client/put token 
+	       (str (project-url project-id) 
+		    "/stories_deliver_all_finished"))))
 
 (defn points [stories]
   (let [f (fn [result story]
@@ -93,5 +103,5 @@
 (defn collect [token project-id keyword & criteria]
   (let [stories (apply all token project-id criteria)]
     (if (keyword? keyword)
-      (map keyword stories)
+      (map #(% keyword) stories)
       (map #(map % (seq keyword)) stories))))
