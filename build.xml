@@ -1,0 +1,29 @@
+<project name="pivotal-tracker-clj" default="jar">
+  
+  <property name="build" location="classes"/>
+  
+  <target name="init">
+    <tstamp/>
+    <mkdir dir="${build}"/>
+  </target>
+  
+  <target name="core">
+    <java classname="clojure.lang.Script">
+      <classpath>
+	<fileset dir="jars" includes="*.jar"/>
+	<pathelement path="lib"/>
+      </classpath>
+      <sysproperty key="clojure.compile.path" value="${build}"/>
+      <arg value="precompile.clj"/>
+    </java>
+  </target>
+  
+  <target name="jar" depends="core">
+    <jar jarfile="pivotal-tracker-clj.jar" basedir="${build}"/>
+  </target>
+  
+  <target name="clean">	  
+    <delete dir="${build}"/>
+  </target>
+  
+</project>
