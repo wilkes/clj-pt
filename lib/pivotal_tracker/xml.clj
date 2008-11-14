@@ -9,12 +9,12 @@
     (do
       (print (str "<" (name (:tag e))))
       (when (:attrs e)
-	(doseq attr (:attrs e)
+	(doseq [attr (:attrs e)]
 	  (print (str " " (name (key attr)) "='" (val attr)"'"))))
       (if (:content e)
 	(do
 	  (print ">")
-	  (doseq c (:content e)
+	  (doseq [c (:content e)]
 	    (emit-element c))
 	  (print (str "</" (name (:tag e)) ">")))
 	(print "/>")))))
