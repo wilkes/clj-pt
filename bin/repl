@@ -6,7 +6,7 @@ for file in jars/*.jar; do
     jars=$jars:$file
 done
 
-classpath=$jars:lib
+classpath=$jars:src
 
 if which rlwrap > /dev/null
 then

@@ -6,7 +6,7 @@ for file in jars/*.jar; do
     jars=$jars:$file
 done
 
-classpath=$jars:lib
+classpath=$jars:src
 
 java -cp $classpath clojure.lang.Repl boot/boot.clj
 
