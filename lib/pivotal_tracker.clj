@@ -21,11 +21,20 @@
   ([project-id story-id]
      (str (story-url project-id) "/" story-id)))
 
-(defn- simple-xml [response]
-  (-> response client/to-string xml/simple-parse))
+(defn- validate-response [response]
+  (let [r (xml/simple-parse response)]
+    (prn r)
+    (if (and (string? (r :response))
+	     (= "500 error" (r :response))) 
+      (throw (Exception.)))
+    (if (-> r :response first :errors)
+      (let [msgs (map :error (-> r :response first :errors))
+	    errors (reduce #(str %1 ", and " %2) msgs)]
+	(throw (Exception. errors))))
+    r))
 
 (defn- fetch [token url]
-  (simple-xml (client/get token url)))
+  (validate-response (client/get token url)))
 
 (defn- valid-story? [s]
   (let [required #{:name :requested_by}
@@ -73,29 +82,27 @@
   [token project-id story]
   (let [url (story-url project-id)
 	data (xml/to-xml :story story)]
-    (except/throw-if (not (valid-story? story)) "Invalid story")
-    (-> (simple-xml (client/post token url data))
+    ;  (except/throw-if (not (valid-story? story)) "Invalid story")
+    (-> (validate-response (client/post token url data)) 
 	:response :story)))
 
-(comment 
-  "Always getting a 500?!?!"
-  (defn update [token project-id story-id update]
-    (let [url (story-url project-id story-id)
-	  data (xml/to-xml :story update)]
-      (simple-xml (client/post token url data)))))
+(defn update [token project-id story-id update]
+  (let [url (story-url project-id story-id)
+	data (xml/to-xml :story update)]
+    (validate-response (client/post token url data))))
 
 
 (defn delete [token project-id story-id]
   "Deletes the story with story-id. Returns the response message string"
   (let [url (story-url project-id story-id)
-	response (simple-xml (client/delete token url))]
+	response (validate-response (client/delete token url))]
     (-> response :response :message)))
 
 (defn deliver-finished-stories [token project-id]
   "Mark all finished stories in the project as delivered."
   (let [url (str (project-url project-id) 
 		    "/stories_deliver_all_finished")]
-    (simple-xml (client/put token url))))
+    (validate-response (client/put token url))))
 
 
 (defn points [stories]

@@ -31,10 +31,16 @@
     (-> x :content)))
 
 (defn- is-value? [item]
-  (and (item :content) (string? (-> item :content first))))
+  (string? (-> item :content first)))
+
+(defn- tags-the-same? [item]
+  (let [t (:tag (-> item :content first))]
+    (if t
+      (every? #(= t (% :tag)) (item :content)))))
 
 (defn- is-list? [item]
-  (and (-> item :attrs) (-> item :attrs :count)))
+  (or (-> item :attrs :count)
+      (tags-the-same? item)))
 
 (defn simplify [item]
   (let [simplify-list #(map simplify (% :content))]

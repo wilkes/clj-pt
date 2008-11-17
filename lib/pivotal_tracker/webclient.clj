@@ -20,12 +20,13 @@
 
 (defn do-request 
   ([token request]
-       (.execute (DefaultHttpClient.) (build-request token request)))
+     (to-string (.execute (DefaultHttpClient.) 
+			  (build-request token request))))
   ([token request data]
-      (.execute (DefaultHttpClient.) (build-request token request data))))
+     (to-string (.execute (DefaultHttpClient.) 
+			  (build-request token request data)))))
 
 (defn get [token url]
-  (println url)
   (do-request token (HttpGet. url)))
 
 (defn post [token url data]
