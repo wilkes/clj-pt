@@ -8,5 +8,5 @@ done
 
 classpath=$jars:lib
 
-java -cp $classpath clojure.lang.Repl boot/boot.clj
+java -cp $classpath clojure.lang.Repl
 
