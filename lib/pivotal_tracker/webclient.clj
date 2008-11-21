@@ -12,11 +12,11 @@
 (defn build-request
   ([token request]
      (doto request
-       (addHeader "Token" token)
-       (addHeader "Content-type" "application/xml")))
+       (.addHeader "Token" token)
+       (.addHeader "Content-type" "application/xml")))
   ([token request data]
      (doto (build-request token request)
-       (setEntity (StringEntity. data)))))
+       (.setEntity (StringEntity. data)))))
 
 (defn do-request 
   ([token request]

@@ -1,6 +1,5 @@
 (ns pivotal-tracker
-  (:require (clojure.contrib (except :as except))
-	    (pivotal-tracker (xml :as xml)
+  (:require (pivotal-tracker (xml :as xml)
 			     (webclient :as client)
 			     (query :as query))))
 
