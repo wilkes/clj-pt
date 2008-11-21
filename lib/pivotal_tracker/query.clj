@@ -7,18 +7,17 @@
 				s)))
 
 (defmacro criteria [& names]
-  `(do 
-     ~@(for [n names]
-	 `(defn ~n [s#]
-	    (str ~(str n) ":" (encode s#))))))
+  `(do
+     ~@(map (fn [n] `(defn ~n [s#]
+		     (str ~(str n) ":" (encode s#))))
+	  names)))
 
 (defmacro enums 
   "Defines a set enumerated filters where all the values are storied as a set 
    in the first arg."
   [setname & names]
   `(do
-     ~@(for [n names]
-	 `(def ~n ~(str setname ":" n)))
+     ~@(map (fn [n] `(def ~n ~(str setname ":" n))) names)
      (def ~setname #{~@names})))
 
 (defn combine
