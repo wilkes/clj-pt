@@ -14,7 +14,7 @@
              (define-key clojure-mode-map "\C-x\C-e" 'lisp-eval-last-sexp)))
 
 
-(setq swank-clojure-jar-path (expand-file-name "jar/clojure.jar"))
-(setq swank-clojure-extra-classpaths (directory-files "jars" t "jar$"))
+(setq swank-clojure-jar-path (expand-file-name "../jars/clojure.jar"))
+(setq swank-clojure-extra-classpaths (directory-files "../jars" t "jar$"))
 (require 'swank-clojure-autoload)
 (slime)
