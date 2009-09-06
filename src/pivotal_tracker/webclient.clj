@@ -9,32 +9,31 @@
 (defn to-string [response]
   (EntityUtils/toString (.getEntity response)))
 
-(defn build-request
-  ([token request]
-     (doto request
-       (.addHeader "Token" token)
-       (.addHeader "Content-type" "application/xml")))
-  ([token request data]
-     (doto (build-request token request)
-       (.setEntity (StringEntity. data)))))
+(defn add-headers [request headers]
+  (prn headers)
+  (doseq [[k v] headers]
+    (.addHeader request k v)))
 
-(defn do-request 
-  ([token request]
-     (to-string (.execute (DefaultHttpClient.) 
-			  (build-request token request))))
-  ([token request data]
-     (to-string (.execute (DefaultHttpClient.) 
-			  (build-request token request data)))))
+(defn add-body [request data]
+  (.setEntity request (StringEntity. data)))
 
-(defn get [token url]
-  (do-request token (HttpGet. url)))
+(defn exec-req [request headers]
+  (let [response (to-string (.execute (DefaultHttpClient.)
+                                      (doto request
+                                        (add-headers (first headers)))))]
+    response))
 
-(defn post [token url data]
-  (do-request token (HttpPost. url) data))
+(defn get [url & headers]
+  (exec-req (HttpGet. url) headers))
 
-(defn delete [token url]
-  (do-request token (HttpDelete. url)))
+(defn post [url data & headers]
+  (exec-req (doto (HttpPost. url) (add-body data))
+            headers))
 
-(defn put [token url]
-  (do-request token (HttpPut. url)))
+(defn delete [url & headers]
+  (exec-req (HttpDelete. url) headers))
+
+(defn put [url data & headers]
+  (exec-req (doto (HttpPut. url) (add-body data))
+            headers))
 

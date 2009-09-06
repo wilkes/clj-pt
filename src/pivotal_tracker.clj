@@ -6,13 +6,13 @@
 ;; ssl on be default
 (declare *base-url*)
 (defn use-ssl []
-  (def *base-url* "https://www.pivotaltracker.com/services/v1/projects/"))
+  (def *base-url* "https://www.pivotaltracker.com/services/v2/"))
 (defn no-ssl []
-  (def *base-url* "http://www.pivotaltracker.com/services/v1/projects/"))
+  (def *base-url* "http://www.pivotaltracker.com/services/v2/"))
 (use-ssl)
 
 (defn- project-url [project-id]
-  (str *base-url* project-id))
+  (str *base-url* "projects/"  project-id))
 
 (defn- story-url 
   ([project-id]
@@ -32,8 +32,12 @@
 	(throw (Exception. errors))))
     r))
 
+(defn token-headers [token]
+  {"Token" token
+   "Content-type" "application/xml"})
+
 (defn- fetch [token url]
-  (validate-response (client/get token url)))
+  (validate-response (client/get url (token-headers token))))
 
 (defn- valid-story? [s]
   (let [required #{:name :requested_by}
@@ -54,11 +58,14 @@
 	     unstarted started finished 
 	     delivered accepted rejected)
 
+(defn- make-dispatcher [& pre-args]
+  (fn [target & args]
+    (apply target (concat pre-args args))))
+
 (defn project [token project-id]
   "Returns a function works like apply but passing in token and project-id
-  as paramaters"
-  (fn [target & args]
-    (apply target token project-id args)))
+  as paramaters as the first two arguments"
+  (make-dispatcher token project-id))
 
 (defn info [token project-id]
   "Returns a map with the current project settings"
@@ -82,39 +89,10 @@
   (let [url (story-url project-id)
 	data (xml/to-xml :story story)]
     ;  (except/throw-if (not (valid-story? story)) "Invalid story")
-    (-> (validate-response (client/post token url data)) 
+    (-> (validate-response (client/post url data (token-headers token))) 
 	:response :story)))
 
 (defn update [token project-id story-id update]
   (let [url (story-url project-id story-id)
 	data (xml/to-xml :story update)]
-    (validate-response (client/post token url data))))
-
-
-(defn delete [token project-id story-id]
-  "Deletes the story with story-id. Returns the response message string"
-  (let [url (story-url project-id story-id)
-	response (validate-response (client/delete token url))]
-    (-> response :response :message)))
-
-(defn deliver-finished-stories [token project-id]
-  "Mark all finished stories in the project as delivered."
-  (let [url (str (project-url project-id) 
-		    "/stories_deliver_all_finished")]
-    (validate-response (client/put token url))))
-
-
-(defn points [stories]
-  "Returns the sum the estimates of the story"
-  (let [f (fn [result story]
-	    (let [estimate (Integer/decode (story :estimate))]
-	      (if (> estimate 0)
-		(+ result estimate)
-		result)))]
-    (reduce f 0 stories)))
-
-(defn reduce-stories [stories & keyword]
-  "Returns a seq of seqs of the values of the keys for the given stories"
-  (seq 
-   (reduce #(conj %1 (map %2 keyword)) [] stories)))
-
+    (validate-response (client/put url data (token-headers token)))))
