@@ -18,7 +18,7 @@
   [setname & names]
   `(do
      ~@(map (fn [n] `(def ~n ~(str setname ":" n))) names)
-     (def ~setname #{~@names})))
+     (def ~(symbol (str "pt-" setname)) #{~@names})))
 
 (defn combine
   "Combine multiple filters to use in the search"
