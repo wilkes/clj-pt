@@ -18,9 +18,10 @@
   (.setEntity request (StringEntity. data)))
 
 (defn exec-req [request headers]
-  (let [response (to-string (.execute (DefaultHttpClient.)
-                                      (doto request
-                                        (add-headers (first headers)))))]
+  (let [client (DefaultHttpClient.)
+        request (doto request (add-headers (first headers)))
+        response (to-string (.execute client request))]
+    (.. client getConnectionManager shutdown)
     response))
 
 (defn get [url & headers]

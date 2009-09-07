@@ -62,6 +62,9 @@
   (fn [target & args]
     (apply target (concat pre-args args))))
 
+(defn user [token]
+  (make-dispatcher token))
+
 (defn project [token project-id]
   "Returns a function works like apply but passing in token and project-id
   as paramaters as the first two arguments"
@@ -72,6 +75,10 @@
   (-> (fetch token (project-url project-id))
       :response :project))
 
+(defn projects [token]
+  (-> (fetch token (project-url ""))
+      :projects))
+
 (defn all 
   "Return a lazy seqs of story maps given an optional list of filters"
   [token project-id & filter]
@@ -79,7 +86,7 @@
 		 (if filter 
 		   (str "?filter=" (apply query/combine filter))))]
     (map :story 
-	 (-> (fetch token url) :response :stories))))
+	 (-> (fetch token url) :stories))))
 
 (defn add
   "Takes a story map and adds it to the project.  
@@ -90,9 +97,35 @@
 	data (xml/to-xml :story story)]
     ;  (except/throw-if (not (valid-story? story)) "Invalid story")
     (-> (validate-response (client/post url data (token-headers token))) 
-	:response :story)))
+	:story)))
 
 (defn update [token project-id story-id update]
   (let [url (story-url project-id story-id)
 	data (xml/to-xml :story update)]
     (validate-response (client/put url data (token-headers token)))))
+
+(defn delete [token project-id story-id]
+  "Deletes the story with story-id. Returns the response message string"
+  (let [url (story-url project-id story-id)
+	response (validate-response (client/delete url (token-headers token)))]
+    (-> response :story)))
+
+(defn deliver-finished-stories [token project-id]
+  "Mark all finished stories in the project as delivered."
+  (let [url (str (project-url project-id) 
+		    "/stories_deliver_all_finished")]
+    (validate-response (client/put url (token-headers token)))))
+
+(defn points [stories]
+  "Returns the sum the estimates of the story"
+  (let [f (fn [result story]
+	    (let [estimate (Integer/decode (story :estimate))]
+	      (if (> estimate 0)
+		(+ result estimate)
+		result)))]
+    (reduce f 0 stories)))
+
+(defn reduce-stories [stories & keyword]
+  "Returns a seq of seqs of the values of the keys for the given stories"
+  (seq 
+   (reduce #(conj %1 (map %2 keyword)) [] stories)))
