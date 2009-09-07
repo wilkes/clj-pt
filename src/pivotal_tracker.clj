@@ -79,6 +79,23 @@
   (-> (fetch token (project-url ""))
       :projects))
 
+(defn iterations [token project-id]
+  (-> (fetch token (str (project-url project-id) "/iterations"))
+      :iterations))
+
+(defn iterations-group [token project-id name]
+  (-> (fetch token (str (project-url project-id) "/iterations/" name))
+      :iterations))
+
+(defn backlog [token project-id]
+  (iterations-group token project-id "backlog"))
+
+(defn current [token project-id]
+  (iterations-group token project-id "current"))
+
+(defn done [token project-id]
+  (iterations-group token project-id "done"))
+
 (defn all 
   "Return a lazy seqs of story maps given an optional list of filters"
   [token project-id & filter]
