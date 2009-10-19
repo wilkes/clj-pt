@@ -2,3 +2,4 @@
 classes
 *user.clj
 lib/*
+deps*.zip
