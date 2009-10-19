@@ -2,6 +2,13 @@ Clojure library for pivotal tracker
 
 http://www.pivotaltracker.com/help/api
 
+
+Download the dependencies from the Downloads tab on the github project
+page:
+
+http://github.com/wilkes/pivotal-tracker-clojure-client/downloads
+
+
 Sample Usage:
 
        ; (use-ssl) or (no-ssl)
