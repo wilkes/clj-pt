@@ -1,4 +1,4 @@
-(ns pivotal-tracker.query
+(ns clj-pt.query
   (:import (java.net URLEncoder)))
 
 (defn encode [s]

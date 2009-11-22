@@ -1,4 +1,4 @@
-(ns pivotal-tracker.xml
+(ns clj-pt.xml
   (:require (clojure.xml))
   (:import (java.io ByteArrayInputStream)))
 

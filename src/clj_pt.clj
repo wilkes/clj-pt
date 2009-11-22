@@ -1,7 +1,7 @@
-(ns pivotal-tracker
-  (:require (pivotal-tracker (xml :as xml)
-			     (webclient :as client)
-			     (query :as query))))
+(ns clj-pt
+  (:require (clj-pt (xml :as xml)
+                    (webclient :as web)
+                    (query :as query))))
 
 ;; ssl on be default
 (declare *base-url*)
@@ -37,7 +37,7 @@
    "Content-type" "application/xml"})
 
 (defn- fetch [token url]
-  (validate-response (client/get url (token-headers token))))
+  (validate-response (web/get url (token-headers token))))
 
 (defn- valid-story? [s]
   (let [required #{:name :requested_by}
@@ -57,6 +57,8 @@
 (query/enums state
 	     unstarted started finished 
 	     delivered accepted rejected)
+
+(def exact query/encode)
 
 (defn- make-dispatcher [& pre-args]
   (fn [target & args]
@@ -113,25 +115,25 @@
   (let [url (story-url project-id)
 	data (xml/to-xml :story story)]
     ;  (except/throw-if (not (valid-story? story)) "Invalid story")
-    (-> (validate-response (client/post url data (token-headers token))) 
+    (-> (validate-response (web/post url data (token-headers token))) 
 	:story)))
 
 (defn update [token project-id story-id update]
   (let [url (story-url project-id story-id)
 	data (xml/to-xml :story update)]
-    (validate-response (client/put url data (token-headers token)))))
+    (validate-response (web/put url data (token-headers token)))))
 
 (defn delete [token project-id story-id]
   "Deletes the story with story-id. Returns the response message string"
   (let [url (story-url project-id story-id)
-	response (validate-response (client/delete url (token-headers token)))]
+	response (validate-response (web/delete url (token-headers token)))]
     (-> response :story)))
 
 (defn deliver-finished-stories [token project-id]
   "Mark all finished stories in the project as delivered."
   (let [url (str (project-url project-id) 
 		    "/stories_deliver_all_finished")]
-    (validate-response (client/put url (token-headers token)))))
+    (validate-response (web/put url (token-headers token)))))
 
 (defn points [stories]
   "Returns the sum the estimates of the story"
@@ -142,7 +144,6 @@
 		result)))]
     (reduce f 0 stories)))
 
-(defn reduce-stories [stories & keyword]
+(defn reduce-stories [stories & keywords]
   "Returns a seq of seqs of the values of the keys for the given stories"
-  (seq 
-   (reduce #(conj %1 (map %2 keyword)) [] stories)))
+  (reduce #(conj %1 (map %2 keywords)) [] stories))
