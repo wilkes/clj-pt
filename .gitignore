@@ -3,3 +3,6 @@ classes
 *user.clj
 lib/*
 deps*.zip
+clj-pt.jar
+Manifest.txt
+pom.xml
