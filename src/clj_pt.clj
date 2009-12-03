@@ -22,7 +22,6 @@
 
 (defn- validate-response [response]
   (let [r (xml/simple-parse response)]
-    (prn r)
     (if (and (string? (r :response))
 	     (= "500 error" (r :response))) 
       (throw (Exception.)))

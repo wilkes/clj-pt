@@ -7,7 +7,6 @@
 	   (org.apache.http.util EntityUtils)))
 
 (defn- add-headers [request headers]
-  (prn headers)
   (doseq [[k v] headers]
     (.addHeader request k v)))
 
