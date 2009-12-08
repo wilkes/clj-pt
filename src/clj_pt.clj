@@ -39,7 +39,8 @@
   (validate-response (web/get url (token-headers token))))
 
 ;; Public API
-(query/criteria label requester owner mywork id)
+(query/criteria label requester owner mywork id
+                created_since modified_since has_attachment)
 
 (query/enums type
 	     feature bug chore release)
@@ -49,6 +50,7 @@
 	     delivered accepted rejected)
 
 (def exact query/encode)
+(def unlabeled (label ""))
 
 (defn- make-dispatcher [& pre-args]
   (fn [target & args]

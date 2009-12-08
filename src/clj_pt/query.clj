@@ -8,8 +8,8 @@
 
 (defmacro criteria [& names]
   `(do
-     ~@(map (fn [n] `(defn ~n [s#]
-		     (str ~(str n) ":" (encode s#))))
+     ~@(map (fn [n] `(defn ~n [& [s#]]
+                       (str ~(str n) ":" (when (seq s#) (encode s#)))))
 	  names)))
 
 (defmacro enums 
