@@ -38,15 +38,6 @@
 (defn- fetch [token url]
   (validate-response (web/get url (token-headers token))))
 
-(defn- valid-story? [s]
-  (let [required #{:name :requested_by}
-	optional #{:id :story_type :url :estimate :current_state 
-		   :description :created_at}
-	all-fields (concat required optional)]
-    (and
-     (every? #(contains? s %) required)
-     (every? #(.contains all-fields %) (keys s)))))
-
 ;; Public API
 (query/criteria label requester owner mywork id)
 
@@ -76,26 +67,27 @@
   (-> (fetch token (project-url project-id))
       :response :project))
 
+(defmulti flatten (fn [key m] key))
+
+(defmethod flatten :project [key m]
+  (merge (key m)
+         {:memberships (map #(flatten :membership %)
+                            (:memberships (key m)))}))
+
+(defmethod flatten :default [key m]
+  (key m))
+
 (defn projects [token]
-  (-> (fetch token (project-url ""))
-      :projects))
+  (map (partial flatten :project)
+       (:projects (fetch token (project-url "")))))
 
-(defn iterations [token project-id]
-  (-> (fetch token (str (project-url project-id) "/iterations"))
-      :iterations))
+(defn iterations [token project-id & [name]]
+     (:iterations (fetch token (str (project-url project-id) "/iterations"
+                                    (when name (str "/" name))))))
 
-(defn iterations-group [token project-id name]
-  (-> (fetch token (str (project-url project-id) "/iterations/" name))
-      :iterations))
-
-(defn backlog [token project-id]
-  (iterations-group token project-id "backlog"))
-
-(defn current [token project-id]
-  (iterations-group token project-id "current"))
-
-(defn done [token project-id]
-  (iterations-group token project-id "done"))
+(defn backlog [token project-id] (iterations token project-id "backlog"))
+(defn current [token project-id] (iterations token project-id "current"))
+(defn done    [token project-id] (iterations token project-id "done"))
 
 (defn all 
   "Return a lazy seqs of story maps given an optional list of filters"
@@ -104,7 +96,7 @@
 		 (if filter 
 		   (str "?filter=" (apply query/combine filter))))]
     (map :story 
-	 (-> (fetch token url) :stories))))
+	 (:stories (fetch token url)))))
 
 (defn add
   "Takes a story map and adds it to the project.  
@@ -113,9 +105,7 @@
   [token project-id story]
   (let [url (story-url project-id)
 	data (xml/to-xml :story story)]
-    ;  (except/throw-if (not (valid-story? story)) "Invalid story")
-    (-> (validate-response (web/post url data (token-headers token))) 
-	:story)))
+    (:story (validate-response (web/post url data (token-headers token))))))
 
 (defn update [token project-id story-id update]
   (let [url (story-url project-id story-id)
@@ -126,7 +116,7 @@
   "Deletes the story with story-id. Returns the response message string"
   (let [url (story-url project-id story-id)
 	response (validate-response (web/delete url (token-headers token)))]
-    (-> response :story)))
+    (:story response)))
 
 (defn deliver-finished-stories [token project-id]
   "Mark all finished stories in the project as delivered."
