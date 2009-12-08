@@ -67,6 +67,7 @@
   (-> (fetch token (project-url project-id))
       :response :project))
 
+(declare flatten-collection)
 (defmulti flatten (fn [key m] key))
 
 (defmethod flatten :project [key m]
