@@ -67,9 +67,6 @@
   (-> (fetch token (project-url project-id))
       :response :project))
 
-(defn flatten-collection [m key child-key]
-  {key (map #(flatten child-key  %) (key m))})
-
 (defmulti flatten (fn [key m] key))
 
 (defmethod flatten :project [key m]
@@ -82,6 +79,9 @@
 
 (defmethod flatten :default [key m]
   (key m))
+
+(defn flatten-collection [m key child-key]
+  {key (map #(flatten child-key  %) (key m))})
 
 (defn projects [token]
   (map #(flatten :project %)
