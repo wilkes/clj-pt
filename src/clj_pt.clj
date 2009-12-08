@@ -67,23 +67,30 @@
   (-> (fetch token (project-url project-id))
       :response :project))
 
+(defn flatten-collection [m key child-key]
+  {key (map #(flatten child-key  %) (key m))})
+
 (defmulti flatten (fn [key m] key))
 
 (defmethod flatten :project [key m]
   (merge (key m)
-         {:memberships (map #(flatten :membership %)
-                            (:memberships (key m)))}))
+         (flatten-collection (key m) :memberships :membership)))
+
+(defmethod flatten :iteration [key m]
+  (merge (key m)
+         (flatten-collection (key m) :stories :story)))
 
 (defmethod flatten :default [key m]
   (key m))
 
 (defn projects [token]
-  (map (partial flatten :project)
+  (map #(flatten :project %)
        (:projects (fetch token (project-url "")))))
 
 (defn iterations [token project-id & [name]]
-     (:iterations (fetch token (str (project-url project-id) "/iterations"
-                                    (when name (str "/" name))))))
+  (map #(flatten :iteration %)
+       (:iterations (fetch token (str (project-url project-id) "/iterations"
+                                      (when name (str "/" name)))))))
 
 (defn backlog [token project-id] (iterations token project-id "backlog"))
 (defn current [token project-id] (iterations token project-id "current"))
@@ -95,8 +102,8 @@
   (let [url (str (story-url project-id) 
 		 (if filter 
 		   (str "?filter=" (apply query/combine filter))))]
-    (map :story 
-	 (:stories (fetch token url)))))
+    (:stories
+     (flatten-collection (fetch token url) :stories :story))))
 
 (defn add
   "Takes a story map and adds it to the project.  
