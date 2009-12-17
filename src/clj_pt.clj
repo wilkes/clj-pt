@@ -65,13 +65,6 @@
   [token project-id]
   (make-dispatcher token project-id))
 
-(defn all-projects [token & args]
-  "Maps a function across all the projects for a given api-token.
-   Returns a sequence of [project function-result].
-   The requests are done in parallel."
-  (let [across #(future [% (apply (project token (:id %)) args)])]
-    (map deref (map across (projects token)))))
-
 (defn info
   "Returns a map with the current project settings"
   [token project-id]
@@ -107,6 +100,13 @@
 (defn backlog [token project-id] (iterations token project-id "backlog"))
 (defn current [token project-id] (iterations token project-id "current"))
 (defn done    [token project-id] (iterations token project-id "done"))
+
+(defn all-projects [token & args]
+  "Maps a function across all the projects for a given api-token.
+   Returns a sequence of [project function-result].
+   The requests are done in parallel."
+  (let [across #(future [% (apply (project token (:id %)) args)])]
+    (map deref (map across (projects token)))))
 
 (defn all 
   "Return a lazy seqs of story maps given an optional list of filters"
