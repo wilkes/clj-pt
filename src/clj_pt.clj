@@ -59,13 +59,22 @@
 (defn user [token]
   (make-dispatcher token))
 
-(defn project [token project-id]
+(defn project
   "Returns a function works like apply but passing in token and project-id
   as paramaters as the first two arguments"
+  [token project-id]
   (make-dispatcher token project-id))
 
-(defn info [token project-id]
+(defn all-projects [token & args]
+  "Maps a function across all the projects for a given api-token.
+   Returns a sequence of [project function-result].
+   The requests are done in parallel."
+  (let [across #(future [% (apply (project token (:id %)) args)])]
+    (map deref (map across (projects token)))))
+
+(defn info
   "Returns a map with the current project settings"
+  [token project-id]
   (-> (fetch token (project-url project-id))
       :response :project))
 
@@ -122,27 +131,29 @@
 	data (xml/to-xml :story update)]
     (validate-response (web/put url data (token-headers token)))))
 
-(defn delete [token project-id story-id]
+(defn delete
   "Deletes the story with story-id. Returns the response message string"
+  [token project-id story-id]
   (let [url (story-url project-id story-id)
 	response (validate-response (web/delete url (token-headers token)))]
     (:story response)))
 
-(defn deliver-finished-stories [token project-id]
+(defn deliver-finished-stories
   "Mark all finished stories in the project as delivered."
+  [token project-id]
   (let [url (str (project-url project-id) 
 		    "/stories_deliver_all_finished")]
     (validate-response (web/put url (token-headers token)))))
 
-(defn points [stories]
-  "Returns the sum the estimates of the story"
-  (let [f (fn [result story]
-	    (let [estimate (Integer/decode (story :estimate))]
-	      (if (> estimate 0)
-		(+ result estimate)
-		result)))]
-    (reduce f 0 stories)))
-
-(defn reduce-stories [stories & keywords]
+(defn reduce-stories
   "Returns a seq of seqs of the values of the keys for the given stories"
+  [stories & keywords]
   (reduce #(conj %1 (map %2 keywords)) [] stories))
+
+(defn points
+  "Returns the sum the estimates of the story"
+  [stories]
+  (apply + (map #(if (:estimate %)
+                   (Integer/decode (:estimate %))
+                   0)
+                stories)))
